@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, redirect
 import validators   
-from src.database import Post,db
+from src.database import Post,db, Comment
 from flask_jwt_extended import get_jwt_identity, jwt_required
 import sys
 
@@ -132,3 +132,36 @@ def delete_post(id):
     return jsonify({
         'message': 'Deleted'
     }), 204
+
+@post.route('post/<int:id>/comment', methods=['POST'])
+@jwt_required()
+def add_comment(id):
+    post = Post.query.filter_by(id=id).first()
+    print(post)
+    data = request.get_json()
+    comment = data.get('comment', '')
+    print(comment)
+    get_comment = Comment.query.filter_by(post_id=id).first()
+    print(get_comment)
+    comment_db = Comment(comment=comment)
+    
+    db.session.add(comment_db)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'comment': get_comment,
+    }), 200
+
+@post.route('post/<int:id>/', methods=['POST'])
+@jwt_required()
+def like_post(id):
+    post = Post.query.filter_by(id=id).first()
+    if post.like == False:
+        post.like = True
+
+    return jsonify ({
+        'success': True,
+        'post': post,
+        'message': 'Post liked'
+    })
